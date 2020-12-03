@@ -1,7 +1,6 @@
 #Turk Dil Kurumu crawler.
 #Sitedeki tüm kelimeleri alır, .txt dosyasına yazar.
 import requests
-import os
 
 url = 'https://sozluk.gov.tr/autocomplete.json'
 uh = requests.get(url)
@@ -13,6 +12,6 @@ for i in data:
     word = i.get('madde')
     
     fh.write(word)
-    fh.write('\n')
+    fh.write('\n') # Insert new line
 
 fh.close()
