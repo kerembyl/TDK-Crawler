@@ -1,4 +1,4 @@
-#Turk Dil Kurumu crawler.
+#Turk Dil Kurumu scraper.
 #Sitedeki tüm kelimeleri alır, .txt dosyasına yazar.
 import requests
 
