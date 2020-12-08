@@ -59,23 +59,36 @@ for i in data:
     word = word.strip()
     if stringCheck(word):
         wordlist.append(word) # append all items into a list
-        fh.write(word) # Write to output.txt
-        fh.write('\n') # Insert new line
+        #fh.write(word) # Write to output.txt
+        #fh.write('\n') # Insert new line
     else: pass
+
+for k in range(len(wordlist)):
+    pick_word = wordlist[k]
+    word_url = f"https://sozluk.gov.tr/gts?ara={pick_word}"
+    word_uh = requests.get(word_url)
+    if not word_uh.status_code == 200: raise Exception('Siteye baglanilamadi :(') 
+    else: print(f"Baglanildi, {pick_word} kelimesi için {word_url} adresinden veri cekiliyor...")
+    word_data = word_uh.json()
+
+    anlam_sayisi = len(word_data)
+    print(f"Bu kelimenin {anlam_sayisi} farklı anlamı var.")
+
+    for i in range(len(word_data)):
+
+        anlam_kelime = pick_word
+        anlam_metin = word_data[i]['anlamlarListe'][0]['anlam']
+        try: anlam_ornek = word_data[i]['anlamlarListe'][0]['orneklerListe'][0]['ornek']
+        except: anlam_ornek = ""
+        try: anlam_yazar = word_data[i]['anlamlarListe'][0]['orneklerListe'][0]['yazar'][0]['tam_adi'] 
+        except: anlam_yazar = ""
+        try: anlam_tur = word_data[i]['anlamlarListe'][0]['ozelliklerListe'][0]['tam_adi']
+        except: anlam_tur = ""
+        try: post_lisan = word_data[i]['lisan']
+        except: post_lisan = ""
+        print(anlam_kelime, anlam_metin, anlam_ornek, anlam_yazar, anlam_tur, post_lisan)
+        combined = (f"{anlam_kelime}, {anlam_metin}, {anlam_ornek}, {anlam_yazar}, {anlam_tur}, {post_lisan}")
+        fh.write(combined) # Write to output.txt
+        fh.write('\n')
+
 fh.close()
-
-pick_word = "biz" #wordlist[456]
-word_url = f"https://sozluk.gov.tr/gts?ara={pick_word}"
-word_uh = requests.get(word_url)
-if not word_uh.status_code == 200: raise Exception('Siteye baglanilamadi :(') 
-else: print(f"Baglanildi, {pick_word} kelimesi için {word_url} adresinden veri cekiliyor...")
-word_data = word_uh.json()
-
-anlam_kelime = pick_word
-anlam_metin = word_data[0]['anlamlarListe'][0]['anlam']
-anlam_ornek = word_data[0]['anlamlarListe'][0]['orneklerListe'][0]['ornek']
-anlam_yazar = word_data[0]['anlamlarListe'][0]['orneklerListe'][0]['yazar'][0]['tam_adi']
-anlam_tur = word_data[0]['anlamlarListe'][0]['ozelliklerListe'][0]['tam_adi']
-print(anlam_kelime, anlam_metin, anlam_ornek, anlam_yazar, anlam_tur)
-
-##post_lisan = word_data[0]['lisan']
