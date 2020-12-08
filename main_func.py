@@ -16,9 +16,9 @@ c.execute('DROP TABLE IF EXISTS Turler')
 c.executescript('''
             CREATE TABLE IF NOT EXISTS Anlamlar(
             anlam_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+            anlam_kelime TEXT NOT NULL,
             anlam_metin TEXT UNIQUE,
             anlam_ornek TEXT,
-            anlam_kelime TEXT NOT NULL,
             anlam_tur INTEGER,
             anlam_lisan INTEGER,
             anlam_yazar TEXT
@@ -27,13 +27,13 @@ c.executescript('''
             CREATE TABLE IF NOT EXISTS Lisanlar(
             lisan_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
             lisan_isim TEXT,
-            FOREIGN KEY (lisan_isim) REFERENCES Anlamlar(anlam_lisan)
+            lisan_foreign INTEGER
             );
 
             CREATE TABLE IF NOT EXISTS Turler(
             tur_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
             tur_isim TEXT,
-            FOREIGN KEY (tur_isim) REFERENCES Anlamlar(anlam_tur)
+            tur_foreign INTEGER
             );
 ''')
 
@@ -84,11 +84,23 @@ for k in range(len(wordlist)):
         except: anlam_yazar = ""
         try: anlam_tur = word_data[i]['anlamlarListe'][0]['ozelliklerListe'][0]['tam_adi']
         except: anlam_tur = ""
-        try: post_lisan = word_data[i]['lisan']
-        except: post_lisan = ""
-        print(anlam_kelime, anlam_metin, anlam_ornek, anlam_yazar, anlam_tur, post_lisan)
-        combined = (f"{anlam_kelime}, {anlam_metin}, {anlam_ornek}, {anlam_yazar}, {anlam_tur}, {post_lisan}")
-        fh.write(combined) # Write to output.txt
-        fh.write('\n')
+        try: anlam_lisan = word_data[i]['lisan']
+        except: anlam_lisan = ""
 
-fh.close()
+        c.execute('''INSERT OR IGNORE INTO Lisanlar (lisan_isim) VALUES
+         (?)''', (anlam_lisan, ))
+        c.execute('SELECT lisan_id FROM Lisanlar WHERE lisan_isim = ? ', (anlam_lisan, ))
+        lisan_foreign = c.fetchone()[0]
+
+        c.execute('''INSERT OR IGNORE INTO Turler (tur_isim) VALUES
+         (?)''', (anlam_tur, ))
+        c.execute('SELECT tur_id FROM Turler WHERE tur_isim = ? ', (anlam_tur, ))
+        tur_foreign = c.fetchone()[0]
+
+        c.execute('''INSERT OR IGNORE INTO Anlamlar (anlam_kelime, anlam_metin, anlam_ornek, anlam_yazar, anlam_tur, anlam_lisan) VALUES
+         (?, ?, ?, ?, ?, ?)''', (anlam_kelime, anlam_metin, anlam_ornek, anlam_yazar, tur_foreign, lisan_foreign))
+
+        conn.commit()
+
+        print(anlam_kelime, anlam_metin, anlam_ornek, anlam_yazar, anlam_tur, anlam_lisan)
+       
