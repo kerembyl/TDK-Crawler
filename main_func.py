@@ -1,7 +1,8 @@
-#Turk Dil Kurumu crawler.
+#Turk Dil Kurumu scraper.
 #Sitedeki tüm kelimeleri alır, .txt dosyasına yazar.
 
 import requests
+
 import re
 import sqlite3
 import json
@@ -26,15 +27,13 @@ c.executescript('''
             CREATE TABLE IF NOT EXISTS Lisanlar(
             lisan_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
             lisan_isim TEXT,
-            post_lisan INTEGER,
-            FOREIGN KEY (post_lisan) REFERENCES Kelimeler(lisan_orjin)
+            FOREIGN KEY (lisan_isim) REFERENCES Anlamlar(anlam_lisan)
             );
 
-             CREATE TABLE IF NOT EXISTS Turler(
-            lisan_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-            lisan_isim TEXT,
-            post_lisan INTEGER,
-            FOREIGN KEY (post_lisan) REFERENCES Kelimeler(lisan_orjin)
+            CREATE TABLE IF NOT EXISTS Turler(
+            tur_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+            tur_isim TEXT,
+            FOREIGN KEY (tur_isim) REFERENCES Anlamlar(anlam_tur)
             );
 ''')
 
@@ -47,10 +46,8 @@ fh = open('output.txt', 'w', encoding='utf-8')
 def stringCheck (word=str):
     filters = True 
     if filters:
-        if re.search("^[a-z][a-z]", word) and len(re.findall("\s", word)) == 0: # Eliminate letters and white space containing stuff
-            return True
-        else:
-            return False
+        if re.search("^[a-z][a-z]", word) and len(re.findall("\s", word)) == 0: return True # Eliminate letters and white space containing stuff
+        else: return False
     else: return True
 
 # Get all of the words
@@ -67,12 +64,18 @@ for i in data:
     else: pass
 fh.close()
 
-pick_word = wordlist[456]
+pick_word = "biz" #wordlist[456]
 word_url = f"https://sozluk.gov.tr/gts?ara={pick_word}"
 word_uh = requests.get(word_url)
 if not word_uh.status_code == 200: raise Exception('Siteye baglanilamadi :(') 
 else: print(f"Baglanildi, {pick_word} kelimesi için {word_url} adresinden veri cekiliyor...")
 word_data = word_uh.json()
 
-print(word_data)
+anlam_kelime = pick_word
+anlam_metin = word_data[0]['anlamlarListe'][0]['anlam']
+anlam_ornek = word_data[0]['anlamlarListe'][0]['orneklerListe'][0]['ornek']
+anlam_yazar = word_data[0]['anlamlarListe'][0]['orneklerListe'][0]['yazar'][0]['tam_adi']
+anlam_tur = word_data[0]['anlamlarListe'][0]['ozelliklerListe'][0]['tam_adi']
+print(anlam_kelime, anlam_metin, anlam_ornek, anlam_yazar, anlam_tur)
 
+##post_lisan = word_data[0]['lisan']
