@@ -2,38 +2,41 @@
 #Sitedeki tüm kelimeleri alır, .txt dosyasına yazar.
 
 import requests
-
 import re
 import sqlite3
 import json
 
 # Database Actions
-conn = sqlite3.connect('tdkcrawler.db')
+conn = sqlite3.connect('tdkscraper.db')
 c = conn.cursor()
 c.execute('DROP TABLE IF EXISTS Anlamlar')
 c.execute('DROP TABLE IF EXISTS Lisanlar')
 c.execute('DROP TABLE IF EXISTS Turler')
+c.execute('DROP TABLE IF EXISTS Kelimeler')
 c.executescript('''
             CREATE TABLE IF NOT EXISTS Anlamlar(
-            anlam_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-            anlam_kelime TEXT NOT NULL,
-            anlam_metin TEXT UNIQUE,
-            anlam_ornek TEXT,
-            anlam_tur INTEGER,
-            anlam_lisan INTEGER,
-            anlam_yazar TEXT
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            anlam TEXT,
+            ornek TEXT,
+            yazar TEXT
             );
 
             CREATE TABLE IF NOT EXISTS Lisanlar(
-            lisan_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-            lisan_isim TEXT,
-            lisan_foreign INTEGER
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            lisan TEXT NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS Turler(
-            tur_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-            tur_isim TEXT,
-            tur_foreign INTEGER
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            tur TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS Kelimeler(
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            kelime TEXT,
+            tur_id INTEGER,
+            lisan_id INTEGER,
+            anlam_id INTEGER
             );
 ''')
 
@@ -76,31 +79,36 @@ for k in range(len(wordlist)):
 
     for i in range(len(word_data)):
 
-        anlam_kelime = pick_word
-        anlam_metin = word_data[i]['anlamlarListe'][0]['anlam']
-        try: anlam_ornek = word_data[i]['anlamlarListe'][0]['orneklerListe'][0]['ornek']
-        except: anlam_ornek = ""
-        try: anlam_yazar = word_data[i]['anlamlarListe'][0]['orneklerListe'][0]['yazar'][0]['tam_adi'] 
-        except: anlam_yazar = ""
-        try: anlam_tur = word_data[i]['anlamlarListe'][0]['ozelliklerListe'][0]['tam_adi']
-        except: anlam_tur = ""
-        try: anlam_lisan = word_data[i]['lisan']
-        except: anlam_lisan = ""
+        kelime = pick_word
+        anlam = word_data[i]['anlamlarListe'][0]['anlam']
+        try: ornek = word_data[i]['anlamlarListe'][0]['orneklerListe'][0]['ornek']
+        except: ornek = ""
+        try: yazar = word_data[i]['anlamlarListe'][0]['orneklerListe'][0]['yazar'][0]['tam_adi'] 
+        except: yazar = ""
+        try: tur = word_data[i]['anlamlarListe'][0]['ozelliklerListe'][0]['tam_adi']
+        except: tur = ""
+        try: lisan = word_data[i]['lisan']
+        except: lisan = None
 
-        c.execute('''INSERT OR IGNORE INTO Lisanlar (lisan_isim) VALUES
-         (?)''', (anlam_lisan, ))
-        c.execute('SELECT lisan_id FROM Lisanlar WHERE lisan_isim = ? ', (anlam_lisan, ))
-        lisan_foreign = c.fetchone()[0]
+        c.execute('''INSERT OR IGNORE INTO Anlamlar (anlam, ornek, yazar) VALUES
+         (?, ?, ?)''', (anlam, ornek, yazar ))
+        c.execute('SELECT id FROM Anlamlar WHERE anlam = ? AND ornek = ? AND yazar = ? ', (anlam, ornek, yazar))
+        anlam_id = c.fetchone()[0]
 
-        c.execute('''INSERT OR IGNORE INTO Turler (tur_isim) VALUES
-         (?)''', (anlam_tur, ))
-        c.execute('SELECT tur_id FROM Turler WHERE tur_isim = ? ', (anlam_tur, ))
-        tur_foreign = c.fetchone()[0]
+        c.execute('''INSERT OR IGNORE INTO Lisanlar (lisan) VALUES
+         (?)''', (lisan, ))
+        c.execute('SELECT id FROM Lisanlar WHERE lisan = ? ', (lisan, ))
+        lisan_id = c.fetchone()[0]
 
-        c.execute('''INSERT OR IGNORE INTO Anlamlar (anlam_kelime, anlam_metin, anlam_ornek, anlam_yazar, anlam_tur, anlam_lisan) VALUES
-         (?, ?, ?, ?, ?, ?)''', (anlam_kelime, anlam_metin, anlam_ornek, anlam_yazar, tur_foreign, lisan_foreign))
+        c.execute('''INSERT OR IGNORE INTO Turler (tur) VALUES
+         (?)''', (tur, ))
+        c.execute('SELECT id FROM Turler WHERE tur = ? ', (tur, ))
+        tur_id = c.fetchone()[0]
 
+        c.execute('''INSERT OR IGNORE INTO Kelimeler (kelime, tur_id, lisan_id, anlam_id) VALUES
+         (?, ?, ?, ?)''', (kelime, tur_id, lisan_id, anlam_id ))
+        
         conn.commit()
 
-        print(anlam_kelime, anlam_metin, anlam_ornek, anlam_yazar, anlam_tur, anlam_lisan)
+        print(kelime, anlam, ornek, yazar, tur, lisan)
        
